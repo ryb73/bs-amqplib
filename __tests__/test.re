@@ -4,7 +4,7 @@ open Js.Promise;
 open PromEx;
 open Amqplib;
 
-let connection = connect("amqp://guest@guest:localhost");
+let connection = connect("amqp://guest:guest@localhost");
 
 let channel = () =>
     connection |> then_(createChannel);
