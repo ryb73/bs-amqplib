@@ -2,8 +2,10 @@ language: node_js
 cache: yarn
 node_js:
 - '11'
-services:
-- rabbitmq
+addons:
+  apt:
+    packages:
+    - rabbitmq-server
 script:
 - yarn build
 - yarn test
