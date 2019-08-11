@@ -1,0 +1,20 @@
+{
+    "name": "@ryb73/bs-amqplib",
+    "bs-dependencies": [
+        "@ryb73/decco",
+        "@ryb73/prom-ex",
+    ],
+    "bs-dev-dependencies": [
+        "@glennsl/bs-jest",
+    ],
+    "sources": [
+        { "dir": "src" },
+        {
+            "dir": "__tests__",
+            "type": "dev"
+        }
+    ],
+    "refmt": 3,
+    "ppx-flags": [ "@ryb73/decco/ppx/ppx_decco.sh" ],
+    "bsc-flags": [ "-w -10", "-bs-super-errors" ]
+}

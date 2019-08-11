@@ -1,0 +1,43 @@
+{
+  "name": "@ryb73/bs-amqplib",
+  "version": "0.0.0",
+  "description": "Bucklescript bindings for https://www.npmjs.com/package/amqplib",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:ryb73/bs-amqplib.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ryb73/bs-amqplib/issues"
+  },
+  "homepage": "https://github.com/ryb73/bs-amqplib#readme",
+  "keywords": [
+    "mq",
+    "message",
+    "queuing",
+    "amqp",
+    "bucklescript",
+    "reason",
+    "reasonml"
+  ],
+  "author": "Ryan",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "build": "npm run clean && bsb -make-world",
+    "watch": "npm run clean && bsb -make-world -w",
+    "clean": "rm -rf lib && bsb -clean-world",
+    "postinstall": "[ ! -f package-links.json ] || ppl link-file"
+  },
+  "peerDependencies": {
+    "bs-platform": "^5.0.0"
+  },
+  "dependencies": {
+    "@ryb73/decco": "^0.1.0",
+    "amqplib": "^0.5.5"
+  },
+  "devDependencies": {
+    "@glennsl/bs-jest": "^0.4.9",
+    "@ryb73/prom-ex": "^0.2.0"
+  }
+}
