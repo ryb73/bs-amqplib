@@ -1,6 +1,9 @@
 {
   "name": "@ryb73/bs-amqplib",
-  "version": "0.0.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "0.1.0",
   "description": "Bucklescript bindings for https://www.npmjs.com/package/amqplib",
   "main": "index.js",
   "repository": {
