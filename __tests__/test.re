@@ -46,7 +46,7 @@ describe("assertQueue", () => {
     });
 });
 
-testAsync("send/consume", done_ => {
+testAsync(~timeout=250, "send/consume", done_ => {
     channel()
     |> then_(channel => {
         let queue = randomName("send-consume");
@@ -73,7 +73,7 @@ testAsync("send/consume", done_ => {
     |> ignore
 });
 
-testAsync("publish", done_ => {
+testAsync(~timeout=250, "publish", done_ => {
     channel()
     |> then_(channel => {
         let exchange = randomName("exchange");
@@ -91,7 +91,8 @@ testAsync("publish", done_ => {
                     |> done_
                 )
             )
-        ) |> then_(_ => publish(exchange, key, Node.Buffer.fromString(msg), channel))
+        )
+        |> then_(_ => publish(exchange, key, Node.Buffer.fromString(msg), channel))
     })
     |> catch(e => {
         expect(Js.String.make(e))
