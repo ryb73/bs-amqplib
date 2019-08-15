@@ -9,7 +9,12 @@ type message = {
 };
 
 [@decco]
-type queue = {
+type exchangeInfo = {
+    exchange: string,
+};
+
+[@decco]
+type queueInfo = {
     queue: string,
     messageCount: int,
     consumerCount: int,
@@ -22,17 +27,28 @@ type queue = {
 [@bs.send.pipe: connection] external createChannel: Js.Promise.t(channel) = "";
 
 [@bs.send.pipe: channel]
+external assertExchange: (string, string) => Js.Promise.t(Js.Json.t) = "";
+let assertExchange = (exchange, type_, channel) =>
+    assertExchange(exchange, type_, channel)
+    |> map(exchangeInfo_decode)
+    |> map(Belt.Result.getExn);
+
+[@bs.send.pipe: channel]
 external assertQueue: (~queue: string=?) => Js.Promise.t(Js.Json.t) = "";
 let assertQueue = (~queue=?, channel) =>
     assertQueue(~queue?, channel)
-    |> map(queue_decode)
+    |> map(queueInfo_decode)
     |> map(Belt.Result.getExn);
 
 [@bs.send.pipe: channel] external checkQueue: (string) => Js.Promise.t(Js.Json.t) = "";
 let checkQueue = (queue, channel) =>
     checkQueue(queue, channel)
-    |> map(queue_decode)
+    |> map(queueInfo_decode)
     |> map(Belt.Result.getExn);
+
+[@bs.send.pipe: channel]
+external bindQueue:
+    (~queue: string, ~exchange: string, ~key: string) => Js.Promise.t(unit) = "";
 
 [@bs.send.pipe: channel]
 external consume: (string, Js.Json.t => unit) => Js.Promise.t(unit) = "";
@@ -42,6 +58,9 @@ let consume = (queue, cb) =>
         |> Belt.Result.getExn
         |> cb
     );
+
+[@bs.send.pipe: channel]
+external publish: (string, string, Node.Buffer.t) => Js.Promise.t(bool) = "";
 
 [@bs.send.pipe: channel]
 external sendToQueue: (string, Node.Buffer.t) => Js.Promise.t(bool) = "";
