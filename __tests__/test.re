@@ -50,7 +50,7 @@ testAsync(~timeout=250, "send/consume", done_ => {
     channel()
     |> then_(channel => {
         let queue = randomName("send-consume");
-        let msg = "hey hey";
+        let msg = randomName("hey hey");
 
         channel
         |> assertQueue(~queue)
@@ -62,7 +62,7 @@ testAsync(~timeout=250, "send/consume", done_ => {
                 |> done_
             )
         )
-        |> then_(_ => sendToQueue(queue, Node.Buffer.fromString(msg), channel))
+        |> map(_ => sendToQueue(queue, Node.Buffer.fromString(msg), channel))
     })
     |> catch(e => {
         expect(Js.String.make(e))
@@ -78,7 +78,7 @@ testAsync(~timeout=250, "publish", done_ => {
     |> then_(channel => {
         let exchange = randomName("exchange");
         let key = randomName("key");
-        let msg = "sup";
+        let msg = randomName("sup");
 
         assertExchange(exchange, "fanout", channel)
         |> then_(_ => assertQueue(channel))
@@ -92,7 +92,7 @@ testAsync(~timeout=250, "publish", done_ => {
                 )
             )
         )
-        |> then_(_ => publish(exchange, key, Node.Buffer.fromString(msg), channel))
+        |> map(_ => publish(exchange, key, Node.Buffer.fromString(msg), channel))
     })
     |> catch(e => {
         expect(Js.String.make(e))
@@ -101,6 +101,52 @@ testAsync(~timeout=250, "publish", done_ => {
         reject(Obj.magic(e));
     })
     |> ignore
+});
+
+testPromise("reply-to", () => {
+    Js.Promise.make((~resolve, ~reject as _) =>
+        channel()
+        |> then_(channel => {
+            let exchange = randomName("exchange");
+            let key = randomName("key");
+            let msg = randomName("howdy");
+
+            assertExchange(exchange, "direct", channel)
+            |> then_(_ => assertQueue(channel))
+            |> then_(({queue}) =>
+                bindQueue(~queue, ~exchange, ~key, channel)
+                |> then_(_ =>
+                    channel
+                    |> consume(queue,
+                        ({content, properties: {replyTo, correlationId}}) =>
+                            1000 |> Js.Global.setTimeout(() =>
+                                Belt.Option.getExn(replyTo)
+                                |> sendToQueue(~correlationId?, _, content, channel)
+                                |> ignore
+                            )
+                            |> ignore
+                    )
+                )
+            )
+            |> then_(_ => {
+                let replyTo = "amq.rabbitmq.reply-to";
+                let correlationId = randomName("hardcore");
+
+                channel
+                |> consume(~noAck=true, replyTo,
+                    ({content, properties: {correlationId: actualCorrelationId}}) =>
+                        (Node.Buffer.toString(content), actualCorrelationId)
+                        |> expect |> toEqual((msg, Some(correlationId)))
+                        |> resolve(. _)
+                )
+                |> map(_ => publish(
+                    ~correlationId, ~replyTo,
+                    exchange, key, Node.Buffer.fromString(msg), channel
+                ))
+            })
+        })
+        |> ignore
+    )
 });
 
 afterAllPromise(() => connection |> then_(close));
