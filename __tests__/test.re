@@ -9,6 +9,9 @@ let connection = connect("amqp://guest:guest@/");
 let channel = () =>
     connection |> then_(createChannel);
 
+let confirmChannel = () =>
+    connection |> then_(createConfirmChannel);
+
 let randomName = (prefix) =>
     prefix ++ (Js.Math.random() |> Js.Float.toString);
 
@@ -119,11 +122,8 @@ testPromise("reply-to", () => {
                     channel
                     |> consume(queue,
                         ({content, properties: {replyTo, correlationId}}) =>
-                            1000 |> Js.Global.setTimeout(() =>
-                                Belt.Option.getExn(replyTo)
-                                |> sendToQueue(~correlationId?, _, content, channel)
-                                |> ignore
-                            )
+                            Belt.Option.getExn(replyTo)
+                            |> sendToQueue(~correlationId?, _, content, channel)
                             |> ignore
                     )
                 )
@@ -147,6 +147,66 @@ testPromise("reply-to", () => {
         })
         |> ignore
     )
+});
+
+describe("confirm", () => {
+    describe("sendToQueue", () => {
+        testAsync(~timeout=10000, "success", done_ =>
+            confirmChannel()
+            |> flatAmend(assertQueue)
+            |> map(((channel, {queue})) => {
+                (err => expect(err) |> toBe(None) |> done_)
+                |> sendToQueueAck(queue, Node.Buffer.fromString(""), _, channel)
+            })
+            |> ignore
+        );
+
+        testAsync(~timeout=10000, "failure", done_ =>
+            confirmChannel()
+            |> flatAmend(assertQueue)
+            |> map(((channel, {queue})) => {
+                closeChannel(channel);
+
+                (err =>
+                    Belt.Option.flatMap(err, Js.Exn.message)
+                    |> expect |> toBe(Some("channel closed")) |> done_
+                )
+                |> sendToQueueAck(queue, Node.Buffer.fromString(""), _, channel)
+            })
+            |> map(_ => ())
+            |> catch(_ => resolve())
+            |> ignore
+        );
+    });
+
+    describe("publish", () => {
+        testAsync(~timeout=250, "success", done_ =>
+            confirmChannel()
+            |> flatAmend(assertExchange(randomName("exch"), "fanout"))
+            |> map(((channel, {exchange})) => {
+                (err => expect(err) |> toBe(None) |> done_)
+                |> publishAck(exchange, "key", Node.Buffer.fromString(""), _, channel)
+            })
+            |> ignore
+        );
+
+        testAsync(~timeout=250, "failure", done_ =>
+            confirmChannel()
+            |> flatAmend(assertExchange(randomName("exch"), "fanout"))
+            |> map(((channel, {exchange})) => {
+                closeChannel(channel);
+
+                (err =>
+                    Belt.Option.flatMap(err, Js.Exn.message)
+                    |> expect |> toBe(Some("channel closed")) |> done_
+                )
+                |> publishAck(exchange, "key", Node.Buffer.fromString(""), _, channel)
+            })
+            |> map(_ => ())
+            |> catch(_ => resolve())
+            |> ignore
+        );
+    });
 });
 
 afterAllPromise(() => connection |> then_(close));
