@@ -2,6 +2,7 @@ open PromEx;
 
 type connection;
 type channel('confirm);
+type confirmChannel = channel(Js.null(Js.Exn.t) => unit);
 
 let decodeUndefined = (decoder, json) =>
     (json === [%bs.raw "undefined"])
@@ -14,10 +15,13 @@ type properties = {
     correlationId: [@decco.codec (_=>failwith("no encode"), decodeUndefined)] option(string),
 };
 
+[@decco.decode] type rawMessage = Js.Json.t;
+
 [@decco.decode]
 type message = {
     content: [@decco.codec Decco.Codecs.magic] Node.Buffer.t,
     properties: properties,
+    raw: rawMessage,
 };
 
 [@decco.decode]
@@ -38,48 +42,52 @@ type queueInfo = {
 
 [@bs.send.pipe: connection] external createChannel: Js.Promise.t(channel(unit)) = "";
 [@bs.send.pipe: connection]
-external createConfirmChannel:
-    Js.Promise.t(channel(Js.null(Js.Exn.t) => unit)) = "";
+external createConfirmChannel: Js.Promise.t(confirmChannel) = "";
 
 [@bs.send.pipe: channel(_)] external closeChannel: unit = "close";
 [@bs.send.pipe: channel(_)] external prefetch: int => unit = "";
 
-[@bs.send.pipe: channel('a)]
+[@bs.send.pipe: channel(_)]
 external assertExchange: (string, string) => Js.Promise.t(Js.Json.t) = "";
 let assertExchange = (exchange, type_, channel) =>
     assertExchange(exchange, type_, channel)
     |> map(exchangeInfo_decode)
     |> map(Belt.Result.getExn);
 
-[@bs.send.pipe: channel('a)]
+[@bs.send.pipe: channel(_)]
 external assertQueue: (~queue: string=?) => Js.Promise.t(Js.Json.t) = "";
 let assertQueue = (~queue=?, channel) =>
     assertQueue(~queue?, channel)
     |> map(queueInfo_decode)
     |> map(Belt.Result.getExn);
 
-[@bs.send.pipe: channel('a)] external checkQueue: (string) => Js.Promise.t(Js.Json.t) = "";
+[@bs.send.pipe: channel(_)]
+external checkQueue: (string) => Js.Promise.t(Js.Json.t) = "";
 let checkQueue = (queue, channel) =>
     checkQueue(queue, channel)
     |> map(queueInfo_decode)
     |> map(Belt.Result.getExn);
 
-[@bs.send.pipe: channel('a)]
+[@bs.send.pipe: channel(_)]
 external bindQueue:
     (~queue: string, ~exchange: string, ~key: string) => Js.Promise.t(unit) = "";
 
 type consumeOptions;
 [@bs.obj] external consumeOptions: (~noAck: bool=?, unit) => consumeOptions = "";
 
-[@bs.send.pipe: channel('s)]
+[@bs.send.pipe: channel(_)]
 external consume: (string, Js.Json.t => unit, consumeOptions) => Js.Promise.t(unit) = "";
 let consume = (~noAck=?, queue, cb) =>
     consumeOptions(~noAck?, ())
     |> consume(queue, json =>
         message_decode(json)
         |> Belt.Result.getExn
+        |> (msg => { ...msg, raw: json })
         |> cb
     );
+
+[@bs.send.pipe: channel(_)] external ack: rawMessage => unit = "";
+[@bs.send.pipe: channel(_)] external nack: rawMessage => unit = "";
 
 type publishOptions;
 [@bs.obj]
