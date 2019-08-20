@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@glennsl/bs-jest": "^0.4.9",
-    "@ryb73/prom-ex": "^0.2.0",
+    "@ryb73/prom-ex": "^0.3.1",
     "bs-platform": "^5.0.0"
   }
 }
