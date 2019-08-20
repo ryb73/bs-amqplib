@@ -18,13 +18,13 @@ let randomName = (prefix) =>
     prefix ++ (Js.Math.random() |> Js.Float.toString);
 
 let exchange = (~type_="fanout", channel) =>
-    channel |> flatAmend(assertExchange(randomName("exchange"), type_));
+    channel |> flatAmend(assertExchange(~durable=false, randomName("exchange"), type_));
 
 let queue = (channelExchange) =>
     channelExchange
     |> flatAmend(((channel, {exchange})) => {
         let key = randomName("key");
-        assertQueue(channel)
+        assertQueue(~durable=false, channel)
         |> flatAmend(({queue}) =>
             bindQueue(~queue, ~exchange, ~key, channel)
             |> map(_ => key)
@@ -43,7 +43,7 @@ testPromise(~timeout, "assertExchange", () => {
     channel()
     |> then_(channel => {
         let exchange = randomName("exchange");
-        assertExchange(exchange, "fanout", channel)
+        assertExchange(~durable=false, exchange, "fanout", channel)
         |> map(({exchange}) => exchange)
         |> map(expect)
         |> map(toBe(exchange))
@@ -54,7 +54,7 @@ describe("assertQueue", () => {
     testPromise(~timeout, "unnamed", () => {
         channel()
         |> then_(channel =>
-            assertQueue(channel)
+            assertQueue(~durable=false, channel)
             |> then_(({queue}) => checkQueue(queue, channel))
         )
         |> map(({queue}) => Js.String.length(queue))
@@ -66,7 +66,7 @@ describe("assertQueue", () => {
         let name = randomName("named");
 
         channel()
-        |> then_(assertQueue(~queue=name))
+        |> then_(assertQueue(~durable=false, ~queue=name))
         |> map(({queue}) => queue)
         |> map(expect)
         |> map(toBe(name))
@@ -80,7 +80,7 @@ testAsync(~timeout, "send/consume", done_ => {
         let msg = randomName("hey hey");
 
         channel
-        |> assertQueue(~queue)
+        |> assertQueue(~durable=false, ~queue)
         |> then_(_ =>
             channel
             |> consume(queue, ({content}) =>
@@ -160,9 +160,9 @@ testPromise(~timeout, "reply-to", () => {
 
 describe("confirm", () => {
     describe("sendToQueue", () => {
-        testAsync(~timeout=10000, "success", done_ =>
+        testAsync(~timeout, "success", done_ =>
             confirmChannel()
-            |> flatAmend(assertQueue)
+            |> flatAmend(assertQueue(~durable=false))
             |> map(((channel, {queue})) => {
                 (err => expect(err) |> toBe(None) |> done_)
                 |> sendToQueueAck(queue, Node.Buffer.fromString(""), _, channel)
@@ -170,9 +170,9 @@ describe("confirm", () => {
             |> ignore
         );
 
-        testAsync(~timeout=10000, "failure", done_ =>
+        testAsync(~timeout, "failure", done_ =>
             confirmChannel()
-            |> flatAmend(assertQueue)
+            |> flatAmend(assertQueue(~durable=false))
             |> map(((channel, {queue})) => {
                 closeChannel(channel);
 

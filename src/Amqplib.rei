@@ -26,9 +26,11 @@ let createConfirmChannel: connection => Js.Promise.t(confirmChannel);
 let closeChannel: (channel(_)) => unit;
 let prefetch: (int, channel(_)) => unit;
 
-let assertExchange: (string, string, channel(_)) => Js.Promise.t(exchangeInfo);
+let assertExchange:
+      (~durable: bool=?, string, string, channel(_)) => Js.Promise.t(exchangeInfo);
 
-let assertQueue: (~queue: string=?, channel(_)) => Js.Promise.t(queueInfo);
+let assertQueue:
+      (~durable: bool=?, ~queue: string=?, channel(_)) => Js.Promise.t(queueInfo);
 let checkQueue: (string, channel(_)) => Js.Promise.t(queueInfo);
 let bindQueue:
     (~queue: string, ~exchange: string, ~key: string, channel(_)) => Js.Promise.t(unit);

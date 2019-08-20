@@ -47,17 +47,26 @@ external createConfirmChannel: Js.Promise.t(confirmChannel) = "";
 [@bs.send.pipe: channel(_)] external closeChannel: unit = "close";
 [@bs.send.pipe: channel(_)] external prefetch: int => unit = "";
 
+type exchangeOptions;
+[@bs.obj] external exchangeOptions: (~durable: bool=?, unit) => exchangeOptions = "";
+
 [@bs.send.pipe: channel(_)]
-external assertExchange: (string, string) => Js.Promise.t(Js.Json.t) = "";
-let assertExchange = (exchange, type_, channel) =>
-    assertExchange(exchange, type_, channel)
+external assertExchange:
+    (string, string, exchangeOptions) => Js.Promise.t(Js.Json.t) = "";
+let assertExchange = (~durable=?, exchange, type_, channel) =>
+    exchangeOptions(~durable?, ())
+    |> assertExchange(exchange, type_, _, channel)
     |> map(exchangeInfo_decode)
     |> map(Belt.Result.getExn);
 
+type queueOptions;
+[@bs.obj] external queueOptions: (~durable: bool=?, unit) => queueOptions = "";
+
 [@bs.send.pipe: channel(_)]
-external assertQueue: (~queue: string=?) => Js.Promise.t(Js.Json.t) = "";
-let assertQueue = (~queue=?, channel) =>
-    assertQueue(~queue?, channel)
+external assertQueue: (~queue: string=?, queueOptions) => Js.Promise.t(Js.Json.t) = "";
+let assertQueue = (~durable=?, ~queue=?, channel) =>
+    queueOptions(~durable?, ())
+    |> assertQueue(~queue?, _, channel)
     |> map(queueInfo_decode)
     |> map(Belt.Result.getExn);
 
