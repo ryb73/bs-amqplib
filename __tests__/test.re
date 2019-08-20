@@ -18,7 +18,8 @@ let randomName = (prefix) =>
     prefix ++ (Js.Math.random() |> Js.Float.toString);
 
 let exchange = (~type_="fanout", channel) =>
-    channel |> flatAmend(assertExchange(~durable=false, randomName("exchange"), type_));
+    channel
+    |> flatAmend(assertExchange(~durable=false, _, randomName("exchange"), type_));
 
 let queue = (channelExchange) =>
     channelExchange
@@ -43,7 +44,7 @@ testPromise(~timeout, "assertExchange", () => {
     channel()
     |> then_(channel => {
         let exchange = randomName("exchange");
-        assertExchange(~durable=false, exchange, "fanout", channel)
+        assertExchange(~durable=false, channel, exchange, "fanout")
         |> map(({exchange}) => exchange)
         |> map(expect)
         |> map(toBe(exchange))
@@ -55,7 +56,7 @@ describe("assertQueue", () => {
         channel()
         |> then_(channel =>
             assertQueue(~durable=false, channel)
-            |> then_(({queue}) => checkQueue(queue, channel))
+            |> then_(({queue}) => checkQueue(channel, queue))
         )
         |> map(({queue}) => Js.String.length(queue))
         |> map(expect)
@@ -82,14 +83,13 @@ testAsync(~timeout, "send/consume", done_ => {
         channel
         |> assertQueue(~durable=false, ~queue)
         |> then_(_ =>
-            channel
-            |> consume(queue, ({content}) =>
+            consume(channel, queue, ({content}) =>
                 Node.Buffer.toString(content)
                 |> expect |> toBe(msg)
                 |> done_
             )
         )
-        |> map(_ => sendToQueue(queue, Node.Buffer.fromString(msg), channel))
+        |> map(_ => sendToQueue(channel, queue, Node.Buffer.fromString(msg)))
     })
     |> catch(e => {
         expect(Js.String.make(e))
@@ -107,12 +107,12 @@ testAsync(~timeout, "publish", done_ => {
     |> then_((((channel, {exchange}), ({queue}, key))) => {
         let msg = randomName("sup");
 
-        channel |> consume(queue, ({content}) =>
+        consume(channel, queue, ({content}) =>
             Node.Buffer.toString(content)
             |> expect |> toBe(msg)
             |> done_
         )
-        |> map(_ => publish(exchange, key, Node.Buffer.fromString(msg), channel))
+        |> map(_ => publish(channel, exchange, key, Node.Buffer.fromString(msg)))
     })
     |> catch(e => {
         expect(Js.String.make(e))
@@ -129,11 +129,10 @@ testPromise(~timeout, "reply-to", () => {
         |> exchange(~type_="direct")
         |> queue
         |> then_((((channel, {exchange}), ({queue}, key))) => {
-            channel
-            |> consume(queue,
+            consume(channel, queue,
                 ({content, properties: {replyTo, correlationId}}) =>
                     Belt.Option.getExn(replyTo)
-                    |> sendToQueue(~correlationId?, _, content, channel)
+                    |> sendToQueue(~correlationId?, channel, _, content)
                     |> ignore
             )
             |> then_(_ => {
@@ -141,8 +140,7 @@ testPromise(~timeout, "reply-to", () => {
                 let correlationId = randomName("hardcore");
                 let msg = randomName("howdy");
 
-                channel
-                |> consume(~noAck=true, replyTo,
+                consume(~noAck=true, channel, replyTo,
                     ({content, properties: {correlationId: actualCorrelationId}}) =>
                         (Node.Buffer.toString(content), actualCorrelationId)
                         |> expect |> toEqual((msg, Some(correlationId)))
@@ -150,7 +148,7 @@ testPromise(~timeout, "reply-to", () => {
                 )
                 |> map(_ => publish(
                     ~correlationId, ~replyTo,
-                    exchange, key, Node.Buffer.fromString(msg), channel
+                    channel, exchange, key, Node.Buffer.fromString(msg)
                 ))
             })
         })
@@ -165,7 +163,7 @@ describe("confirm", () => {
             |> flatAmend(assertQueue(~durable=false))
             |> map(((channel, {queue})) => {
                 (err => expect(err) |> toBe(None) |> done_)
-                |> sendToQueueAck(queue, Node.Buffer.fromString(""), _, channel)
+                |> sendToQueueAck(channel, queue, Node.Buffer.fromString(""))
             })
             |> ignore
         );
@@ -180,7 +178,7 @@ describe("confirm", () => {
                     Belt.Option.flatMap(err, Js.Exn.message)
                     |> expect |> toBe(Some("channel closed")) |> done_
                 )
-                |> sendToQueueAck(queue, Node.Buffer.fromString(""), _, channel)
+                |> sendToQueueAck(channel, queue, Node.Buffer.fromString(""))
             })
             |> map(_ => ())
             |> catch(_ => resolve())
@@ -194,7 +192,7 @@ describe("confirm", () => {
             |> exchange
             |> map(((channel, {exchange})) => {
                 (err => expect(err) |> toBe(None) |> done_)
-                |> publishAck(exchange, "key", Node.Buffer.fromString(""), _, channel)
+                |> publishAck(channel, exchange, "key", Node.Buffer.fromString(""))
             })
             |> ignore
         );
@@ -209,7 +207,7 @@ describe("confirm", () => {
                     Belt.Option.flatMap(err, Js.Exn.message)
                     |> expect |> toBe(Some("channel closed")) |> done_
                 )
-                |> publishAck(exchange, "key", Node.Buffer.fromString(""), _, channel)
+                |> publishAck(channel, exchange, "key", Node.Buffer.fromString(""))
             })
             |> map(_ => ())
             |> catch(_ => resolve())
@@ -228,14 +226,14 @@ testPromise("ack/nack", () =>
 
             // Keep track of the # of attempts, and don't ack until the 3rd
             // If we check `attempts` after a short period of time, it should === 3
-            channel |> consume(queue, ({raw}) => {
+            consume(channel, queue, ({raw}) => {
                 incr(attempts)
 
                 attempts^ === 3
-                    ? ack(raw, channel)
-                    : nack(raw, channel);
+                    ? ack(channel, raw)
+                    : nack(channel, raw);
             })
-            |> map(_ => publish(exchange, key, Node.Buffer.fromString(""), channel))
+            |> map(_ => publish(channel, exchange, key, Node.Buffer.fromString("")))
             |> map(_ =>
                 250 |> Js.Global.setTimeout(() =>
                     expect(attempts^) |> toBe(3)
@@ -252,10 +250,10 @@ testPromise("cancel", () =>
     |> exchange
     |> queue
     |> then_((((channel, _), ({queue}, _))) =>
-        channel |> consume(queue, _ => ())
+        consume(channel, queue, _ => ())
         |> map(({consumerTag}) => consumerTag)
-        |> then_(cancel(_, channel))
-        |> then_(_ => checkQueue(queue, channel))
+        |> then_(cancel(channel))
+        |> then_(_ => checkQueue(channel, queue))
         |> map(({consumerCount}) => consumerCount)
         |> map(expect) |> map(toBe(0))
     )

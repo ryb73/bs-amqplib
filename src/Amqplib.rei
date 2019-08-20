@@ -25,45 +25,45 @@ let createChannel: connection => Js.Promise.t(channel(unit));
 let createConfirmChannel: connection => Js.Promise.t(confirmChannel);
 
 let closeChannel: (channel(_)) => unit;
-let prefetch: (int, channel(_)) => unit;
+let prefetch: (channel(_), int) => unit;
 
 let assertExchange:
-      (~durable: bool=?, string, string, channel(_)) => Js.Promise.t(exchangeInfo);
+      (~durable: bool=?, channel(_), string, string) => Js.Promise.t(exchangeInfo);
 
 let assertQueue:
       (~durable: bool=?, ~queue: string=?, channel(_)) => Js.Promise.t(queueInfo);
-let checkQueue: (string, channel(_)) => Js.Promise.t(queueInfo);
+let checkQueue: (channel(_), string) => Js.Promise.t(queueInfo);
 let bindQueue:
-    (~queue: string, ~exchange: string, ~key: string, channel(_)) => Js.Promise.t(unit);
+    (channel(_), ~queue: string, ~exchange: string, ~key: string) => Js.Promise.t(unit);
 
 /** (~noAck=?, queue, callback, channel) */
 let consume:
-      (~noAck: bool=?, string, message => unit, channel(_)) => Js.Promise.t(consumeInfo);
+      (~noAck: bool=?, channel(_), string, message => unit) => Js.Promise.t(consumeInfo);
 
 /** (consumerTag, channel) */
-let cancel: (string, channel(_)) => Js.Promise.t(unit);
+let cancel: (channel(_), string) => Js.Promise.t(unit);
 
-let ack: (rawMessage, channel(_)) => unit;
-let nack: (rawMessage, channel(_)) => unit;
+let ack: (channel(_), rawMessage) => unit;
+let nack: (channel(_), rawMessage) => unit;
 
 /** (~correlationId=?, ~replyTo=?, exchange, key, content, channel) */
 let publish:
-    (~correlationId: string=?, ~replyTo: string=?, string, string,
-      Node.Buffer.t, channel(_)) => bool;
+    (~correlationId: string=?, ~replyTo: string=?, channel(_), string, string,
+      Node.Buffer.t) => bool;
 
 /** (~correlationId=?, ~replyTo=?, exchange, key, content, onAck, channel) */
 let publishAck:
-    (~correlationId: string=?, ~replyTo: string=?, string, string,
-      Node.Buffer.t, option('a) => unit, channel(Js.null('a) => unit)) => bool;
+    (~correlationId: string=?, ~replyTo: string=?, confirmChannel,
+      string, string, Node.Buffer.t, option(Js.Exn.t) => unit)
+    => bool;
 
 /** (~correlationId=?, ~replyTo=?, queue, content, channel) */
 let sendToQueue:
-    (~correlationId: string=?, ~replyTo: string=?, string,
-      Node.Buffer.t, channel(_))
+    (~correlationId: string=?, ~replyTo: string=?, channel(_), string, Node.Buffer.t)
     => bool;
 
 /** (~correlationId=?, ~replyTo=?, queue, content, onAck, channel) */
 let sendToQueueAck:
-    (~correlationId: string=?, ~replyTo: string=?, string,
-      Node.Buffer.t, option(Js.Exn.t) => unit, confirmChannel)
+    (~correlationId: string=?, ~replyTo: string=?, confirmChannel, string,
+      Node.Buffer.t, option(Js.Exn.t) => unit)
     => bool;

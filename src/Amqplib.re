@@ -47,66 +47,66 @@ type queueInfo = {
 external createConfirmChannel: Js.Promise.t(confirmChannel) = "";
 
 [@bs.send.pipe: channel(_)] external closeChannel: unit = "close";
-[@bs.send.pipe: channel(_)] external prefetch: int => unit = "";
+[@bs.send] external prefetch: (channel(_), int) => unit = "";
 
 type exchangeOptions;
 [@bs.obj] external exchangeOptions: (~durable: bool=?, unit) => exchangeOptions = "";
 
-[@bs.send.pipe: channel(_)]
+[@bs.send]
 external assertExchange:
-    (string, string, exchangeOptions) => Js.Promise.t(Js.Json.t) = "";
-let assertExchange = (~durable=?, exchange, type_, channel) =>
+    (channel(_), string, string, exchangeOptions) => Js.Promise.t(Js.Json.t) = "";
+let assertExchange = (~durable=?, channel, exchange, type_) =>
     exchangeOptions(~durable?, ())
-    |> assertExchange(exchange, type_, _, channel)
+    |> assertExchange(channel, exchange, type_)
     |> map(exchangeInfo_decode)
     |> map(Belt.Result.getExn);
 
 type queueOptions;
 [@bs.obj] external queueOptions: (~durable: bool=?, unit) => queueOptions = "";
 
-[@bs.send.pipe: channel(_)]
-external assertQueue: (~queue: string=?, queueOptions) => Js.Promise.t(Js.Json.t) = "";
+[@bs.send]
+external assertQueue:
+    (channel(_), ~queue: string=?, queueOptions) => Js.Promise.t(Js.Json.t) = "";
 let assertQueue = (~durable=?, ~queue=?, channel) =>
     queueOptions(~durable?, ())
-    |> assertQueue(~queue?, _, channel)
+    |> assertQueue(~queue?, channel)
     |> map(queueInfo_decode)
     |> map(Belt.Result.getExn);
 
-[@bs.send.pipe: channel(_)]
-external checkQueue: (string) => Js.Promise.t(Js.Json.t) = "";
-let checkQueue = (queue, channel) =>
-    checkQueue(queue, channel)
+[@bs.send]
+external checkQueue: (channel(_), string) => Js.Promise.t(Js.Json.t) = "";
+let checkQueue = (channel, queue) =>
+    checkQueue(channel, queue)
     |> map(queueInfo_decode)
     |> map(Belt.Result.getExn);
 
-[@bs.send.pipe: channel(_)]
+[@bs.send]
 external bindQueue:
-    (~queue: string, ~exchange: string, ~key: string) => Js.Promise.t(unit) = "";
+    (channel(_), ~queue: string, ~exchange: string, ~key: string)
+    => Js.Promise.t(unit) = "";
 
 type consumeOptions;
 [@bs.obj] external consumeOptions: (~noAck: bool=?, unit) => consumeOptions = "";
 
-[@bs.send.pipe: channel(_)]
+[@bs.send]
 external consume:
-    (string, Js.Json.t => unit, consumeOptions) => Js.Promise.t(Js.Json.t) = "";
-let consume = (~noAck=?, queue, cb, channel) =>
+    (channel(_), string, Js.Json.t => unit, consumeOptions)
+    => Js.Promise.t(Js.Json.t) = "";
+let consume = (~noAck=?, channel, queue, cb) =>
     consumeOptions(~noAck?, ())
-    |> consume(
-        queue,
-        json =>
-            message_decode(json)
-            |> Belt.Result.getExn
-            |> (msg => { ...msg, raw: json })
-            |> cb,
-        _, channel
+    |> consume(channel, queue, json =>
+        message_decode(json)
+        |> Belt.Result.getExn
+        |> (msg => { ...msg, raw: json })
+        |> cb,
     )
     |> map(consumeInfo_decode)
     |> map(Belt.Result.getExn);
 
-[@bs.send.pipe: channel(_)] external cancel: (string) => Js.Promise.t(unit) = "";
+[@bs.send] external cancel: (channel(_), string) => Js.Promise.t(unit) = "";
 
-[@bs.send.pipe: channel(_)] external ack: rawMessage => unit = "";
-[@bs.send.pipe: channel(_)] external nack: rawMessage => unit = "";
+[@bs.send] external ack: (channel(_), rawMessage) => unit = "";
+[@bs.send] external nack: (channel(_), rawMessage) => unit = "";
 
 type publishOptions;
 [@bs.obj]
@@ -114,30 +114,32 @@ external publishOptions:
     (~correlationId: string=?, ~replyTo: string=?, unit) => publishOptions = "";
 
 let wrapOnAck = (onAck) =>
-    (err) => Js.nullToOption(err) |> onAck;
+    Some(err => Js.nullToOption(err) |> onAck);
 
-[@bs.send.pipe: channel('confirm)]
+[@bs.send]
 external publishImpl:
-    (string, string, Node.Buffer.t, publishOptions, ~onAck: 'confirm=?)
+    (channel('confirm), string, string, Node.Buffer.t,
+     publishOptions, option('confirm))
     => bool = "publish";
 
-let publish = (~correlationId=?, ~replyTo=?, exchange, key, content, channel) =>
+let publish = (~correlationId=?, ~replyTo=?, channel, exchange, key, content) =>
     publishOptions(~correlationId?, ~replyTo?, ())
-    |> publishImpl(exchange, key, content, _, channel);
+    |> publishImpl(channel, exchange, key, content, _, None);
 
 let publishAck =
-    (~correlationId=?, ~replyTo=?, exchange, key, content, onAck, channel) =>
+    (~correlationId=?, ~replyTo=?, channel, exchange, key, content, onAck) =>
         publishOptions(~correlationId?, ~replyTo?, ())
-        |> publishImpl(~onAck=wrapOnAck(onAck), exchange, key, content, _, channel);
+        |> publishImpl(channel, exchange, key, content, _, wrapOnAck(onAck));
 
-[@bs.send.pipe: channel('confirm)]
+[@bs.send]
 external sendToQueueImpl:
-    (string, Node.Buffer.t, publishOptions, ~onAck: 'confirm=?) => bool = "sendToQueue";
+    (channel('confirm), string, Node.Buffer.t, publishOptions, option('confirm))
+    => bool = "sendToQueue";
 
-let sendToQueue = (~correlationId=?, ~replyTo=?, queue, content, channel) =>
+let sendToQueue = (~correlationId=?, ~replyTo=?, channel, queue, content) =>
     publishOptions(~correlationId?, ~replyTo?, ())
-    |> sendToQueueImpl(queue, content, _, channel);
+    |> sendToQueueImpl(channel, queue, content, _, None);
 
-let sendToQueueAck = (~correlationId=?, ~replyTo=?, queue, content, onAck, channel) =>
+let sendToQueueAck = (~correlationId=?, ~replyTo=?, channel, queue, content, onAck) =>
     publishOptions(~correlationId?, ~replyTo?, ())
-    |> sendToQueueImpl(~onAck=wrapOnAck(onAck), queue, content, _, channel);
+    |> sendToQueueImpl(channel, queue, content, _, wrapOnAck(onAck));
