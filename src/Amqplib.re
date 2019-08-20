@@ -36,6 +36,8 @@ type queueInfo = {
     consumerCount: int,
 };
 
+[@decco.decode] type consumeInfo = { consumerTag: string };
+
 [@bs.module "amqplib"] external connect: string => Js.Promise.t(connection) = "";
 
 [@bs.send.pipe: connection] external close: Js.Promise.t(unit) = "";
@@ -85,15 +87,23 @@ type consumeOptions;
 [@bs.obj] external consumeOptions: (~noAck: bool=?, unit) => consumeOptions = "";
 
 [@bs.send.pipe: channel(_)]
-external consume: (string, Js.Json.t => unit, consumeOptions) => Js.Promise.t(unit) = "";
-let consume = (~noAck=?, queue, cb) =>
+external consume:
+    (string, Js.Json.t => unit, consumeOptions) => Js.Promise.t(Js.Json.t) = "";
+let consume = (~noAck=?, queue, cb, channel) =>
     consumeOptions(~noAck?, ())
-    |> consume(queue, json =>
-        message_decode(json)
-        |> Belt.Result.getExn
-        |> (msg => { ...msg, raw: json })
-        |> cb
-    );
+    |> consume(
+        queue,
+        json =>
+            message_decode(json)
+            |> Belt.Result.getExn
+            |> (msg => { ...msg, raw: json })
+            |> cb,
+        _, channel
+    )
+    |> map(consumeInfo_decode)
+    |> map(Belt.Result.getExn);
+
+[@bs.send.pipe: channel(_)] external cancel: (string) => Js.Promise.t(unit) = "";
 
 [@bs.send.pipe: channel(_)] external ack: rawMessage => unit = "";
 [@bs.send.pipe: channel(_)] external nack: rawMessage => unit = "";

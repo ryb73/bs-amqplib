@@ -247,4 +247,18 @@ testPromise("ack/nack", () =>
     )
 );
 
+testPromise("cancel", () =>
+    channel()
+    |> exchange
+    |> queue
+    |> then_((((channel, _), ({queue}, _))) =>
+        channel |> consume(queue, _ => ())
+        |> map(({consumerTag}) => consumerTag)
+        |> then_(cancel(_, channel))
+        |> then_(_ => checkQueue(queue, channel))
+        |> map(({consumerCount}) => consumerCount)
+        |> map(expect) |> map(toBe(0))
+    )
+);
+
 afterAllPromise(() => connection |> then_(close));

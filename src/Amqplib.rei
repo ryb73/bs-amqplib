@@ -16,6 +16,7 @@ type message = {
 };
 type exchangeInfo = { exchange: string };
 type queueInfo = { queue: string, messageCount: int, consumerCount: int };
+type consumeInfo = { consumerTag: string };
 
 let connect: string => Js.Promise.t(connection);
 let close: connection => Js.Promise.t(unit);
@@ -36,7 +37,11 @@ let bindQueue:
     (~queue: string, ~exchange: string, ~key: string, channel(_)) => Js.Promise.t(unit);
 
 /** (~noAck=?, queue, callback, channel) */
-let consume: (~noAck: bool=?, string, message => unit, channel(_)) => Js.Promise.t(unit);
+let consume:
+      (~noAck: bool=?, string, message => unit, channel(_)) => Js.Promise.t(consumeInfo);
+
+/** (consumerTag, channel) */
+let cancel: (string, channel(_)) => Js.Promise.t(unit);
 
 let ack: (rawMessage, channel(_)) => unit;
 let nack: (rawMessage, channel(_)) => unit;
