@@ -85,6 +85,8 @@ external bindQueue:
     (channel(_), ~queue: string, ~exchange: string, ~key: string)
     => Js.Promise.t(unit) = "";
 
+[@bs.send] external purgeQueue: (channel(_), string) => Js.Promise.t(unit) = "";
+
 type consumeOptions;
 [@bs.obj] external consumeOptions: (~noAck: bool=?, unit) => consumeOptions = "";
 

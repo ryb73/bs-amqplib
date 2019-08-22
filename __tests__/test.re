@@ -259,4 +259,23 @@ testPromise("cancel", () =>
     )
 );
 
+testPromise("purgeQueue", () =>
+    confirmChannel()
+    |> exchange
+    |> queue
+    |> then_((((channel, _), ({queue}, _))) =>
+        Js.Promise.make((~resolve, ~reject as _) =>
+            sendToQueueAck(channel, queue, Node.Buffer.fromString(""), fun
+                | Some(err) => raise(Obj.magic(err))
+                | None => resolve(. 0) // 0 instead of unit because of reason parse bug
+            )
+            |> ignore
+        )
+        |> then_(_ => purgeQueue(channel, queue))
+        |> then_(_ => checkQueue(channel, queue))
+        |> map(({messageCount}) => messageCount)
+        |> map(expect) |> map(toBe(0))
+    )
+);
+
 afterAllPromise(() => connection |> then_(close));

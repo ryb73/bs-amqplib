@@ -35,6 +35,7 @@ let assertQueue:
 let checkQueue: (channel(_), string) => Js.Promise.t(queueInfo);
 let bindQueue:
     (channel(_), ~queue: string, ~exchange: string, ~key: string) => Js.Promise.t(unit);
+let purgeQueue: (channel(_), string) => Js.Promise.t(unit);
 
 /** (~noAck=?, queue, callback, channel) */
 let consume:
