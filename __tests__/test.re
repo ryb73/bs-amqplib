@@ -40,6 +40,13 @@ let catchAndReject = (reject, p) =>
     })
     |> ignore;
 
+testPromise("connect timeout", () =>
+    connect(~options={"timeout": 1}, "amqp://guest:guest@/")
+    |> map(_ => false)
+    |> catch(_ => resolve(true))
+    |> map(expect) |> map(toBe(true))
+);
+
 testPromise(~timeout, "assertExchange", () => {
     channel()
     |> then_(channel => {

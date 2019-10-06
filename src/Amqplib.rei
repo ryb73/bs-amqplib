@@ -18,7 +18,7 @@ type exchangeInfo = { exchange: string };
 type queueInfo = { queue: string, messageCount: int, consumerCount: int };
 type consumeInfo = { consumerTag: string };
 
-let connect: string => Js.Promise.t(connection);
+let connect: (~options: Js.t(_)=?, string) => Js.Promise.t(connection);
 let close: connection => Js.Promise.t(unit);
 
 let createChannel: connection => Js.Promise.t(channel(unit));

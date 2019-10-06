@@ -38,7 +38,9 @@ type queueInfo = {
 
 [@decco.decode] type consumeInfo = { consumerTag: string };
 
-[@bs.module "amqplib"] external connect: string => Js.Promise.t(connection) = "";
+[@bs.module "amqplib"]
+external connect: (string, ~options: Js.t(_)=?) => Js.Promise.t(connection) = "";
+let connect = (~options=?, url) => connect(url, ~options?);
 
 [@bs.send.pipe: connection] external close: Js.Promise.t(unit) = "";
 
