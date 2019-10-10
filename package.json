@@ -3,6 +3,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "files": [
+    "/bsconfig.json",
+    "/src",
+    "/lib/js/src"
+  ],
   "version": "0.7.1",
   "description": "Bucklescript bindings for https://www.npmjs.com/package/amqplib",
   "main": "index.js",
