@@ -8,7 +8,7 @@
     "/src",
     "/lib/js/src"
   ],
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Bucklescript bindings for https://www.npmjs.com/package/amqplib",
   "main": "index.js",
   "repository": {
