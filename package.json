@@ -7,7 +7,7 @@
     "/bsconfig.json",
     "/src"
   ],
-  "version": "0.7.2",
+  "version": "0.8.0-bs6.0",
   "description": "Bucklescript bindings for https://www.npmjs.com/package/amqplib",
   "main": "index.js",
   "repository": {
