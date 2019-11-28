@@ -293,11 +293,6 @@
     "@types/istanbul-reports" "^1.1.1"
     "@types/yargs" "^13.0.0"
 
-"@ryb73/decco@^0.2.1":
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/@ryb73/decco/-/decco-0.2.2.tgz#66f1bd122900c92e793db13e7c478211934c851c"
-  integrity sha512-fK9qPlS0F6KNJaLv3iotoY4W10H578mgt7zNCDIRaTeu4BhLpGHZRzJbQj11DpmvllpjS8Wf3y5/auwu09Z/Uw==
-
 "@ryb73/prom-ex@^1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@ryb73/prom-ex/-/prom-ex-1.0.1.tgz#2ced9b859c8cafd9815b4ce4941616accfb90b3a"
@@ -668,10 +663,10 @@ bs-let@^0.1.10:
   resolved "https://registry.yarnpkg.com/bs-let/-/bs-let-0.1.10.tgz#acfcd9640743cda8201b628201fffad296320914"
   integrity sha512-4YOXsX4qgXlToH7ciht8ne9rJpXU90PJo5ozPv7HtQSxFx7XaQ9U6IT7O4RW/TyuUiDyi0AszvwHo/1v1ZKXFg==
 
-bs-platform@6.0.0:
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/bs-platform/-/bs-platform-6.0.0.tgz#92b2a45787538289b63b7a4e3611bb661e01c1f6"
-  integrity sha512-6PWtziwGNtR1fbY4EP1h9M8jsLBOVt3/bIa/HCyf6dRA/WNygKXsj3s5QIqmhbjBozCLUtinY8jpas9Y6pdbVA==
+bs-platform@^6.0.1:
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/bs-platform/-/bs-platform-6.2.1.tgz#30266c7f23a3b323e1fc9596a9a6eb9f053981b4"
+  integrity sha512-FmQ8kYV52A0Y302qh6o0/J9TO+kHzsjGQnsjrg/ONUYIY/jWzBnt9dCBO6EBnaEKfFJLqk5JrUDCxuihqtTcnw==
 
 bser@^2.0.0:
   version "2.1.1"
@@ -903,6 +898,11 @@ decamelize@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/decamelize/-/decamelize-1.2.0.tgz#f6534d15148269b20352e7bee26f501f9a191290"
   integrity sha1-9lNNFRSCabIDUue+4m9QH5oZEpA=
+
+decco@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/decco/-/decco-1.0.0.tgz#eeb95776341f74839bed0d874007b263be17499d"
+  integrity sha512-ZwTEGyQkq8QnssDoNhKaCe/AnfmIlHMsr9nGixPBzGoT0st/39SKSvKxIk+8zBiyKSM73lIhlcrCNq31Hvp5eQ==
 
 decode-uri-component@^0.2.0:
   version "0.2.0"
