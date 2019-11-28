@@ -5,10 +5,9 @@
   },
   "files": [
     "/bsconfig.json",
-    "/src",
-    "/lib/js/src"
+    "/src"
   ],
-  "version": "0.7.2",
+  "version": "0.8.0-bs6.1",
   "description": "Bucklescript bindings for https://www.npmjs.com/package/amqplib",
   "main": "index.js",
   "repository": {
@@ -38,15 +37,15 @@
     "postinstall": "[ ! -f package-links.json ] || ppl link-file"
   },
   "peerDependencies": {
-    "bs-platform": "^5.0.0"
+    "bs-platform": "^6.0.1"
   },
   "dependencies": {
-    "@ryb73/decco": "^0.1.0",
-    "amqplib": "^0.5.5"
+    "amqplib": "^0.5.5",
+    "decco": "^1.0.0"
   },
   "devDependencies": {
     "@glennsl/bs-jest": "^0.4.9",
-    "@ryb73/prom-ex": "^0.3.1",
-    "bs-platform": "^5.0.0"
+    "@ryb73/prom-ex": "^1.0.1",
+    "bs-platform": "^6.0.1"
   }
 }
